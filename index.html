@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EDILIZIA64 • Dipendenti</title>
+<style>
+body{margin:0;background:#0b0b0b;color:#e5e7eb;font-family:system-ui;font-weight:700}
+main{max-width:980px;margin:20px auto;padding:0 16px}
+.card{background:#121212;border:1px solid #222;border-radius:16px;padding:18px}
+input,textarea{width:100%;background:#fff;color:#111;border:3px solid #fff;border-radius:12px;padding:16px;font-size:20px;font-weight:800}
+textarea{min-height:150px}
+.btn{padding:16px 18px;border-radius:12px;border:2px solid #3a3a3a;background:#1f1f1f;color:#fff;cursor:pointer;font-weight:900;font-size:18px}
+.btn.primary{background:#22c55e;color:#0b0b0b;border-color:#22c55e}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.out{background:#0f0f0f;border:1px dashed #2a2a2a;border-radius:12px;padding:12px;font-family:ui-monospace,monospace;white-space:pre-wrap;color:#cbd5e1}
+.hint{color:#aab2bf;font-size:13px}
+</style>
+</head><body><main><div class="card">
+<h1>Registrazione ore</h1><div id="app"></div></div></main>
+<script type="module">
+// ---- CRYPTO (AES-GCM + PBKDF2) ----
+const PASSWORD="ed64!2025#GCM";
+const PBKDF2_ITERS=200000, KEY_LEN=256, GCM_IV_LEN=12, SALT_LEN=16;
+const enc=new TextEncoder(), dec=new TextDecoder();
+function rnd(n){const b=new Uint8Array(n); crypto.getRandomValues(b); return b;}
+async function deriveKey(password,salt){
+  const keyMaterial=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:PBKDF2_ITERS,hash:"SHA-256"},
+    keyMaterial,{name:"AES-GCM",length:KEY_LEN},false,["encrypt","decrypt"]);
+}
+function b64(ab){const u=new Uint8Array(ab); let s=""; for (let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s);}
+function ab(b){const s=atob(b); const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u.buffer;}
+async function encryptText(t){
+  const salt=rnd(SALT_LEN), iv=rnd(GCM_IV_LEN), key=await deriveKey(PASSWORD,salt);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc.encode(t));
+  return JSON.stringify({v:3,alg:"AES-GCM",kdf:"PBKDF2-SHA256",iters:PBKDF2_ITERS,s:b64(salt),iv:b64(iv),ct:b64(ct)});
+}
+// ---- APP 7 STEP ----
+const S={nome:"",data:"",ore:"",cantiere:"",lavorazione:"",note:""};
+const steps=[
+  ["Nome e Cognome",()=>' <input id=inp placeholder="ES. MARIO ROSSI"> <div class=row><button class=btn id=clear>DIMENTICA NOME</button></div> '],
+  ["Data",()=>' <input id=inp type=date> '],
+  ["Ore lavorate",()=>' <input id=inp type=number step=0.5 placeholder="ES. 8"> '],
+  ["Cantiere / Cliente",()=>' <input id=inp placeholder="ES. VIA VERDI, 12 — SIG. ROSSI"> '],
+  ["Lavorazione",()=>' <textarea id=inp placeholder="ES. CARTONGESSO, POSA AUTOBLOCCANTI, VMC..."></textarea> '],
+  ["Note / Messaggio",()=>' <textarea id=inp placeholder="DETTAGLI ATTIVITÀ, MEZZI, ECC. (FACOLTATIVO)"></textarea> '],
+  ["Invia al gruppo",()=>' <div class=out id=out></div> <div class=row><button class="btn primary" id=send>🔐 INVIA CIFRATO AL GRUPPO</button></div> <div id=status class=hint></div> ']
+];
+let i=0; const el=document.getElementById('app');
+function view(){
+  const [t,fn]=steps[i];
+  el.innerHTML=`<h2>${t}</h2>`+fn()+`<div class=row><button class=btn id=prev>INDIETRO</button><button class="btn primary" id=next>${i==steps.length-1?'RIEPILOGO':'AVANTI'}</button></div>`;
+  if(document.getElementById('clear')) document.getElementById('clear').onclick=()=>{localStorage.removeItem('ed64_nome'); const a=document.getElementById('inp'); if(a) a.value='';};
+  if(t==="Invia al gruppo"){ document.getElementById('out').textContent=txt(); document.getElementById('send').onclick=send; }
+  document.getElementById('prev').onclick=()=>{ if(i>0){ i--; view(); } };
+  document.getElementById('next').onclick=()=>{ apply(); if(i<steps.length-1){ i++; } view(); };
+  const inp=document.getElementById('inp'); if(inp){ if(t==='Nome e Cognome') inp.value=S.nome||localStorage.getItem('ed64_nome')||''; else inp.value=S[Object.keys(S)[i]]||''; if(t==='Data' && !S.data) inp.valueAsDate=new Date(); }
+}
+function apply(){ const k=Object.keys(S)[i]; const inp=document.getElementById('inp'); if(!inp) return; S[k]=inp.value.trim(); if(k==='nome') localStorage.setItem('ed64_nome',S[k]); if(k==='data'&&!S.data) S.data=new Date().toISOString().slice(0,10); }
+function txt(){ return ['REGISTRAZIONE ORE — EDILIZIA64',`Nome: ${S.nome}`,`Data: ${S.data||new Date().toISOString().slice(0,10)}`,`Ore: ${S.ore}`,`Cantiere/Cliente: ${S.cantiere}`,`Lavorazione: ${S.lavorazione}`,`Note: ${S.note}`].join('\n'); }
+async function send(){
+  const st=document.getElementById('status'); st.textContent='Cripto e invio...';
+  try{
+    const env=await encryptText(txt());
+    const fname=`ore_${(S.data||new Date().toISOString().slice(0,10)).replaceAll('-','')}_${(S.nome||'anonimo').replaceAll(' ','_')}.ed64.txt`;
+    const r=await fetch('/.netlify/functions/send-document',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({envelope:env,filename:fname})});
+    if(!r.ok) throw new Error(await r.text());
+    st.textContent='Inviato ✓';
+  }catch(e){ st.textContent=(e&&e.message)||'Errore'; }
+}
+view();
+</script></body></html>
