@@ -3,8 +3,14 @@
 <title>EDILIZIA64 • Dipendenti</title>
 <style>
 body{margin:0;background:#0b0b0b;color:#e5e7eb;font-family:system-ui;font-weight:700}
-main{max-width:980px;margin:20px auto;padding:0 16px}
+main{max-width:980px;margin:20px auto 48px;padding:0 16px}
 .card{background:#121212;border:1px solid #222;border-radius:16px;padding:18px}
+.hero{margin-bottom:20px}
+.hero h1{margin:0 0 8px;font-size:32px}
+.hero p{margin:8px 0;color:#cbd5e1;font-weight:600;line-height:1.5}
+.hero ul{margin:12px 0 0;padding-left:20px;color:#cbd5e1;font-weight:600;line-height:1.6}
+.hero li{margin:6px 0}
+.hero .result{margin-top:14px;color:#e2e8f0}
 input,textarea{width:100%;background:#fff;color:#111;border:3px solid #fff;border-radius:12px;padding:16px;font-size:20px;font-weight:800}
 textarea{min-height:150px}
 .btn{padding:16px 18px;border-radius:12px;border:2px solid #3a3a3a;background:#1f1f1f;color:#fff;cursor:pointer;font-weight:900;font-size:18px}
@@ -13,8 +19,22 @@ textarea{min-height:150px}
 .out{background:#0f0f0f;border:1px dashed #2a2a2a;border-radius:12px;padding:12px;font-family:ui-monospace,monospace;white-space:pre-wrap;color:#cbd5e1}
 .hint{color:#aab2bf;font-size:13px}
 </style>
-</head><body><main><div class="card">
-<h1>Registrazione ore</h1><div id="app"></div></div></main>
+</head><body><main>
+<section class="card hero">
+  <h1>CantierOne – L’app che automatizza la gestione ore in cantiere</h1>
+  <p>CantierOne è la soluzione definitiva per chi vuole dire addio a fogli di carta, calcoli manuali e perdite di tempo.</p>
+  <p>Ogni dipendente registra le proprie ore di lavoro direttamente dallo smartphone, selezionando cantiere, lavorazione e orario con pochi tap. Al termine della giornata, l’app genera e invia un file cifrato e sicuro che tutela i dati e li rende leggibili solo dall’amministratore.</p>
+  <p>💡 La vera magia avviene sul PC aziendale:</p>
+  <ul>
+    <li>I file ricevuti vengono riconosciuti, decifrati e trasformati automaticamente in fogli di calcolo pronti per la contabilità e l’analisi dei costi.</li>
+    <li>I dati si aggregano da soli per giorno, cantiere, lavoratore e lavorazione, creando un archivio storico sempre aggiornato.</li>
+    <li>Con un clic puoi aggiornare le liste di cantieri e lavorazioni e inviarle ai dispositivi dei dipendenti senza dover installare nulla.</li>
+  </ul>
+  <p class="result">📈 Il risultato? Nessuna trascrizione manuale, zero errori e un flusso di lavoro completamente automatizzato: dall’inserimento delle ore in cantiere fino alla reportistica sul tuo PC.</p>
+</section>
+<div class="card">
+  <h1>Registrazione ore</h1><div id="app"></div>
+</div></main>
 <script type="module">
 // ---- CRYPTO (AES-GCM + PBKDF2) ----
 const PASSWORD="ed64!2025#GCM";
